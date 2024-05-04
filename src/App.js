@@ -1,23 +1,26 @@
-import logo from './logo.svg';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.css';
+import { SkeletonTheme } from 'react-loading-skeleton';
+import { ReactNotifications } from 'react-notifications-component'
+import 'react-notifications-component/dist/theme.css'
+import Login from './pages/login';
+import AdminLogin from './pages/admin/login';
+import AdminDashboard from './pages/admin/dashboard'
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ 'height': '100vh' }} className="bg-dark text-light">
+      <ReactNotifications/>
+      <SkeletonTheme baseColor="#313131" highlightColor="#525252">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/admin" element={<AdminLogin />}/>
+            <Route path="/admin/dashboard" element={<AdminDashboard />}/>
+          </Routes>
+        </BrowserRouter>
+      </SkeletonTheme>
     </div>
   );
 }

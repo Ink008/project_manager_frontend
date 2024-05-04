@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Project Manager",
+  "name": "Ứng dụng quản lý dự án",
   "icons": [
     {
       "src": "favicon.ico",
