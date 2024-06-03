@@ -1,13 +1,37 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Form } from "react-bootstrap";
 
-import Skeleton from 'react-loading-skeleton'
-import 'react-loading-skeleton/dist/skeleton.css'
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { FetchPostAPI } from "../config/config";
+import { DangerToast } from "../component/toast";
 
 function Login() {
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    const LoginHandler = async (e) => {
+        e.preventDefault();
+        try {
+            setIsLoading(true);
+            var data = await FetchPostAPI('/user', {
+                username: username,
+                password: password
+            });
+            if (!data) throw new Error('Please checked the user again!');
+
+            // Đăng nhập thành công
+            sessionStorage.setItem('user_id', JSON.stringify(data.id));
+            navigate('home');
+        } catch (error) {
+            DangerToast("Login Failed!", error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     return (
         <div style={{ 'minHeight': '100vh' }} className="d-flex flex-column align-items-center justify-content-center">
@@ -16,10 +40,7 @@ function Login() {
                 style={{ filter: 'brightness(0) saturate(100%) invert(76%) sepia(7%) saturate(3467%) hue-rotate(160deg) brightness(102%) contrast(97%)' }} />
             <br />
             <br />
-            <Form onSubmit={(e) => {
-                e.preventDefault();
-                setIsLoading(true);
-            }}>
+            <Form onSubmit={LoginHandler}>
                 <Form.Group className='mb-3'>
                     <Form.Control type="text" placeholder="Username" value={username} autoFocus
                         onChange={(e) => setUsername(e.target.value)} />

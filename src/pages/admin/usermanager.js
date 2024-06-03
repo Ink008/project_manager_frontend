@@ -1,8 +1,8 @@
-import { Plus, Pen, Trash, Flag, FlagFill } from "react-bootstrap-icons";
+import { Plus, Pen, Trash, Person, PersonFill } from "react-bootstrap-icons";
 import { Button, ButtonGroup, Table, Modal, Form, FloatingLabel } from "react-bootstrap";
 import { useState, useEffect } from "react";
-import { DangerToast } from "../../component/toast";
 
+import { DangerToast } from "../../component/toast";
 import { FetchGetAPI, FetchPostAPI } from "../../config/config";
 import Skeleton from "react-loading-skeleton";
 import SearchBar from "../../component/searchbar";
@@ -106,13 +106,15 @@ function UserManager() {
         <SearchBar onSearch={(value) => {
             if (!isLoading) refresh(value);
         }} />
-        <div className="d-flex justify-content-between align-items-end ps-2 my-2">
-            <h3>User Management</h3>
-            <Button variant="success"
+        <div className="d-flex justify-content-between align-items-center ps-2 my-2">
+            <h3 className="Admin-link m-0">Users Management</h3>
+            {isLoading 
+            ? <Skeleton width={55.45} height={43.46}/> 
+            : <Button variant="success"
                 onClick={() => {
                     setSelectedUser(null);
                     setIsShowingUserDialog(true);
-                }}><Plus size={30} /></Button>
+                }}><Plus size={30} /></Button>}
         </div>
         <Table hover={!isLoading} variant="dark"
             className="border border-admin">
@@ -154,7 +156,7 @@ function UserManager() {
                                     setSelectedUser(user);
                                     setIsShowingRoleDialog(true)
                                 }}>
-                                {!user.is_manager ? <Flag size={20} /> : <FlagFill size={20} />}
+                                {!user.is_manager ? <Person size={20} /> : <PersonFill size={20} />}
                             </Button>
                             <Button variant="success"
                                 onClick={() => {

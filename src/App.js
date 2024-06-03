@@ -7,6 +7,12 @@ import 'react-notifications-component/dist/theme.css'
 import Login from './pages/login';
 import AdminLogin from './pages/admin/login';
 import AdminDashboard from './pages/admin/dashboard'
+import Home from './pages/user/home';
+import Layout from './pages/user/layout';
+import ViewManager from './pages/user/viewmanager';
+import Member from './pages/user/member';
+import ViewContent from './pages/user/viewcontent';
+import Permission from './pages/user/permission';
 
 function App() {
   return (
@@ -15,9 +21,22 @@ function App() {
       <SkeletonTheme baseColor="#313131" highlightColor="#525252">
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/admin" element={<AdminLogin />}/>
-            <Route path="/admin/dashboard" element={<AdminDashboard />}/>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Login />} />
+              <Route path="home" element={<Home />} />
+              <Route path="workspace/:id" >
+                <Route index element={<ViewManager />}/>
+                <Route path='member' element={<Member />}/>
+              </Route>
+              <Route path="view/:id" >
+                <Route index element={<ViewContent />}/>
+                <Route path='member' element={<Permission />}/>
+              </Route>
+            </Route>
+            <Route path='/admin'>
+              <Route index element={<AdminLogin />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </SkeletonTheme>

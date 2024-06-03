@@ -1,14 +1,16 @@
 import Container from 'react-bootstrap/Container';
 import { Button, Nav, Navbar } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import UserManager from "./usermanager";
+import WorkspaceTranfer from './workspacetranfer';
 
 function Dashboard() {
+    const admin = JSON.parse(sessionStorage.getItem("admin"));
     const icon_size = 48;
     const navigate = useNavigate();
-    const admin = JSON.parse(sessionStorage.getItem("admin"));
+    const [isHome, setIsHome] = useState(true);
 
     useEffect(() => {
         if(!admin) {
@@ -24,8 +26,11 @@ function Dashboard() {
                 style={{ filter: 'brightness(0) saturate(100%) invert(71%) sepia(100%) saturate(282%) hue-rotate(72deg) brightness(101%) contrast(97%)' }} />
             </Navbar.Brand>
             <Nav className="me-auto">
-                <Nav.Link>
+                <Nav.Link onClick={() => {if(!isHome) setIsHome(true)}}>
                     <b className='h5 Admin-link'>Home</b>
+                </Nav.Link>
+                <Nav.Link onClick={() => {if(isHome) setIsHome(false)}}>
+                    <b className='h5 Admin-link'>Workspace transfer</b>
                 </Nav.Link>
             </Nav>
             <div className="justify-content-end">
@@ -40,7 +45,7 @@ function Dashboard() {
             </Container>
         </Navbar>
         <div className='bg-dark'>
-            <UserManager/>
+            {isHome ? <UserManager/> : <WorkspaceTranfer/>}
         </div>
     </>
 }
