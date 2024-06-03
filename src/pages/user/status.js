@@ -1,17 +1,20 @@
-import { useEffect, useState } from "react";
 import { Check, Pen, Plus, Trash, X } from "react-bootstrap-icons";
 import { Button, ButtonGroup, Modal } from "react-bootstrap";
+import { useEffect, useState } from "react";
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useOutletContext } from "react-router-dom";
 
 import Task from "./task";
+import { FetchGetAPI, FetchPostAPI } from "../../config/config";
+import { DangerToast } from "../../component/toast";
 
-function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
+function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisabledTask, fetchContent, statusDeleteHandler }) {
     const user = useOutletContext();
-    const tasks = data.tasks;
+    const [tasks, setTasks] = useState([]);
     const uid = `status-id-${data.id}`;
     const [name, setName] = useState('');
+    const [isLoadingSpinner, setIsLoadingSpinner] = useState(false);
     const [isShowing, setIsShowing] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
@@ -28,10 +31,75 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
         data: { ...data, type: 'STATUS' }
     });
 
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : undefined,
+        width: 350,
+        height: 'fit-content'
+    };
+
     const isEmpty = () => {
         return tasks.length === 0 || (tasks.length === 1 && tasks[0].id.toString().includes('fake'))
     }
 
+    const statusUpdateHandler = async (name) => {
+        data.name = name;
+        setIsEditing(false);
+        setGlobalUID(null);
+        try {
+            var res = await FetchPostAPI(`/status/update`, {
+                id: data.id,
+                name: name
+            });
+            if (!res.success) throw Error(res.message);
+        } catch (error) {
+            DangerToast("Update Status Failed!", error.message);
+        } finally {
+            fetchContent();
+        }
+    }
+
+    const taskAddHandler = async (name) => {
+        setGlobalUID(null);
+        setIsCreating(false);
+        // Disable status moving
+        setIsDisabledTask(true);
+        setIsLoadingSpinner(true);
+        try {
+            var res = await FetchPostAPI(`/task/add`, {
+                status_id: data.id,
+                name: name,
+                position: tasks.length
+            });
+            if (!res.success) throw Error(res.message);
+        } catch (error) {
+            DangerToast("Add Task Failed!", error.message);
+        } finally {
+            await fetchContent();
+            setIsDisabledTask(false);
+            setIsLoadingSpinner(false);
+        }
+    }
+    
+    const taskDeleteHandler = async (id) => {
+        // Update Local Tasks first
+        const new_tasks = [...tasks];
+        const index = new_tasks.findIndex((task) => task.id === id);
+        new_tasks.splice(index, 1);
+        setTasks(new_tasks);
+        // Update Database
+        try {
+            var res = await FetchGetAPI(`/task/delete?${new URLSearchParams({
+                id: id
+            }).toString()}`);
+            if (!res.success) throw Error(res.message);
+        } catch (error) {
+            DangerToast("Delete Task Failed!", error.message);
+        } finally {
+            fetchContent();
+        }
+    }
     // This will generate a fake task as a placeholder for SortableContext
     // Because for some F*CKING REASON that SoftableContent can't drop item when it's have no item in it
     // Update: the fake id should be different for each status
@@ -57,13 +125,9 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
         }
     }, [uid, globalUID]);
 
-    const style = {
-        transform: CSS.Translate.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : undefined,
-        width: 350,
-        height: 'fit-content'
-    };
+    useEffect(() => {
+        setTasks(data.tasks);
+    }, [data]);
 
     return <div className="border rounded border-light bg-dark m-2 d-flex flex-column"
         ref={setNodeRef} style={style} {...attributes} {...listeners} >
@@ -92,10 +156,11 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
                     className="d-flex justify-content-between align-items-center"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        console.log('editing');
+                        statusUpdateHandler(name);
                     }}>
                     <input
                         autoFocus
+                        required
                         className="h5 m-0"
                         data-bs-theme="dark"
                         value={name}
@@ -133,20 +198,26 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
                     view={view}
                     globalUID={globalUID}
                     setGlobalUID={setGlobalUID}
+                    fetchContent={fetchContent}
+                    taskDeleteHandler={taskDeleteHandler}
                 />)}
             </SortableContext>
         </ul>
         {view.leader?.id === user.id && !isCreating
             ? <Button
-                className={`text-light mx-2 ${isEmpty() ? 'my-2' : 'mb-2'}`}
-                variant="outline-secondary"
+                className={`text-light d-flex justify-content-center mx-2 ${isEmpty() ? 'my-2' : 'mb-2'}`}
+                variant={isLoadingSpinner ? "secondary" : "outline-secondary"}
                 onClick={() => {
-                    setIsCreating(true);
-                    setIsEditing(false);
-                    setGlobalUID(uid);
+                    if(!isLoadingSpinner) {
+                        setIsCreating(true);
+                        setIsEditing(false);
+                        setGlobalUID(uid);
+                    }
                 }}
             >
-                <Plus size={34} />
+                {!isLoadingSpinner
+                    ? <Plus size={34} />
+                    : <div className="spinner-border"></div>}
             </Button>
             : <></>}
         {isCreating
@@ -154,9 +225,11 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
                 className={`bg-secondary d-flex align-items-center rounded p-2 mx-2 ${isEmpty() ? 'my-2' : 'mb-2'}`}
                 onSubmit={(e) => {
                     e.preventDefault();
-                    console.log('creating');
+                    const name = (new FormData(e.target)).get('name');
+                    taskAddHandler(name);
                 }}>
                 <input
+                    name="name"
                     autoFocus
                     className="m-0 flex-fill"
                     data-bs-theme="dark"
@@ -180,7 +253,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask }) {
             onHide={() => setIsShowing(false)}
             onSubmit={() => {
                 setIsShowing(false);
-                console.log('deleting');
+                statusDeleteHandler(data.id);
             }} />
     </div>;
 }

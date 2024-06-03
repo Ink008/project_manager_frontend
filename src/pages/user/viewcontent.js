@@ -1,3 +1,5 @@
+import { Button, ButtonGroup } from "react-bootstrap";
+import { Check, Plus, X } from "react-bootstrap-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Scrollbar } from "react-scrollbars-custom";
@@ -16,9 +18,7 @@ import Status from "./status";
 import Task from "./task";
 import Skeleton from "react-loading-skeleton";
 import { DangerToast } from "../../component/toast";
-import { FetchGetAPI } from "../../config/config";
-import { Button, ButtonGroup } from "react-bootstrap";
-import { Check, Plus, X } from "react-bootstrap-icons";
+import { FetchGetAPI, FetchPostAPI } from "../../config/config";
 
 function ViewContent() {
     const user = useOutletContext();
@@ -26,6 +26,7 @@ function ViewContent() {
     const [content, setContent] = useState([]);
     const [view, setView] = useState({});
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingSpinner, setIsLoadingSpinner] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [uid, setUID] = useState(null);
     const navigate = useNavigate();
@@ -71,6 +72,148 @@ function ViewContent() {
         }
     }, [fetchContent]);
 
+    const statusAddHandler = async (name) => {
+        setUID(null);
+        setIsCreating(false);
+        // Disable status moving
+        setIsDisabledStatus(true);
+        setIsLoadingSpinner(true);
+        try {
+            var data = await FetchPostAPI(`/status/add`, {
+                view_id: id,
+                name: name,
+                position: content.length
+            });
+            if (!data.success) throw Error(data.message);
+        } catch (error) {
+            DangerToast("Add Status Failed!", error.message);
+        } finally {
+            await fetchContent();
+            setIsDisabledStatus(false);
+            setIsLoadingSpinner(false);
+        }
+    }
+
+    const statusMoveHandler = async (id, new_index) => {
+        try {
+            var data = await FetchGetAPI(`/status/move?${new URLSearchParams({
+                id: id,
+                position: new_index
+            }).toString()}`);
+            if (!data.success) throw Error(data.message);
+        } catch (error) {
+            DangerToast("Move Status Failed!", error.message);
+        } finally {
+            fetchContent();
+        }
+    }
+
+    const statusDeleteHandler = async (id) => {
+        // Update local content first
+        const new_content = [...content];
+        const index = new_content.findIndex((status) => status.id === id);
+        new_content.splice(index, 1);
+        setContent(new_content);
+        // Update Database
+        try {
+            var data = await FetchGetAPI(`/status/delete?${new URLSearchParams({
+                id: id
+            }).toString()}`);
+            if (!data.success) throw Error(data.message);
+        } catch (error) {
+            DangerToast("Delete Status Failed!", error.message);
+        } finally {
+            fetchContent();
+        }
+    }
+
+    const taskMoveHandler = async (id, status_id, new_index) => {
+        try {
+            var data = await FetchPostAPI(`/task/move`, {
+                id: id,
+                status_id: status_id,
+                position: new_index
+            });
+            if (!data.success) throw Error(data.message);
+        } catch (error) {
+            DangerToast("Move Task Failed!", error.message);
+        } finally {
+            fetchContent();
+        }
+    }
+
+    const dragStartHandler = (event) => {
+        const { active } = event;
+        const active_current = active.data.current;
+        setOverlayActive(active_current);
+
+        if (active_current.type === 'STATUS') {
+            setIsDisabledStatus(false);
+            setIsDisabledTask(true);
+        } else if (active_current.type === 'TASK') {
+            setIsDisabledTask(false);
+            setIsDisabledStatus(true);
+        }
+    }
+
+    const dragOverHandler = (event) => {
+        const { active, over } = event;
+
+        if (!active?.data?.current || !over?.data?.current || !over) return;
+        if (active?.id.toString() === over?.toString()) return;
+
+        const active_current = active.data.current;
+        const over_current = over.data.current;
+
+        if (active_current.type === 'TASK' && over_current.type === 'TASK') {
+            const old_tasks = findStatusByTaskID(active_current.id.toString()).tasks;
+            const new_tasks = findStatusByTaskID(over_current.id.toString()).tasks;
+            let old_index = findTaskIndexByID(old_tasks, active_current.id.toString());
+            let new_index = findTaskIndexByID(new_tasks, over_current.id.toString());
+
+            const isBelowOverItem =
+                active.rect.current.translated &&
+                active.rect.current.translated.top >
+                over.rect.top + over.rect.height;
+            const modifier = isBelowOverItem ? 1 : 0;
+
+            new_index = new_index >= 0 ? new_index + modifier : new_tasks.length + 1;
+
+            old_tasks[old_index].status_id = over_current.status_id;
+            old_tasks[old_index].position = new_index;
+
+            let [task] = old_tasks.splice(old_index, 1);
+            new_tasks.splice(new_index, 0, task);
+        }
+    }
+
+    const dragEndHandler = (event) => {
+        const { active, over } = event;
+
+        if (!active?.data?.current || !over?.data?.current || !over) return;
+        if (active?.id.toString() === over?.toString()) return;
+
+        const active_current = active.data.current;
+        const over_current = over.data.current;
+
+        if (active_current.type === 'STATUS' && over_current.type === 'STATUS') {
+            const old_index = active_current.sortable.index;
+            const new_index = over_current.sortable.index;
+            setContent(arrayMove(content, old_index, new_index));
+            statusMoveHandler(active_current.id, new_index);
+        }
+
+        if (active_current.type === 'TASK' && over_current.type === 'TASK') {
+            const status_id = over_current.status_id;
+            const new_index = over_current.sortable.index;
+            taskMoveHandler(active_current.id, status_id, new_index);
+        }
+
+        setIsDisabledStatus(false);
+        setIsDisabledTask(false);
+        setOverlayActive(null);
+    }
+
     useEffect(() => {
         if (user.is_manager) {
             navigate('/home');
@@ -79,7 +222,7 @@ function ViewContent() {
     }, [refresh, navigate, user.is_manager]);
 
     useEffect(() => {
-        if (uid != null) {
+        if (uid !== 'create-status') {
             setIsCreating(false);
         }
     }, [uid]);
@@ -88,76 +231,9 @@ function ViewContent() {
         <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
-            onDragStart={(event) => {
-                const { active } = event;
-                const active_current = active.data.current;
-                setOverlayActive(active_current);
-
-                if (active_current.type === 'STATUS') {
-                    setIsDisabledStatus(false);
-                    setIsDisabledTask(true);
-                } else if (active_current.type === 'TASK') {
-                    setIsDisabledTask(false);
-                    setIsDisabledStatus(true);
-                }
-            }}
-
-            onDragOver={(event) => {
-                const { active, over } = event;
-
-                if (!active?.data?.current || !over?.data?.current || !over) return;
-                if (active?.id.toString() === over?.toString()) return;
-
-                const active_current = active.data.current;
-                const over_current = over.data.current;
-
-                if (active_current.type === 'TASK' && over_current.type === 'TASK') {
-                    const old_tasks = findStatusByTaskID(active_current.id.toString()).tasks;
-                    const new_tasks = findStatusByTaskID(over_current.id.toString()).tasks;
-                    let old_index = findTaskIndexByID(old_tasks, active_current.id.toString());
-                    let new_index = findTaskIndexByID(new_tasks, over_current.id.toString());
-
-                    const isBelowOverItem =
-                        active.rect.current.translated &&
-                        active.rect.current.translated.top >
-                        over.rect.top + over.rect.height;
-                    const modifier = isBelowOverItem ? 1 : 0;
-
-                    new_index = new_index >= 0 ? new_index + modifier : new_tasks.length + 1;
-
-                    old_tasks[old_index].status_id = over_current.status_id;
-                    old_tasks[old_index].position = new_index;
-
-                    let [task] = old_tasks.splice(old_index, 1);
-                    new_tasks.splice(new_index, 0, task);
-                }
-            }}
-
-            onDragEnd={(event) => {
-                const { active, over } = event;
-                console.log('active: ', active);
-                console.log('over: ', over);
-
-                if (!active?.data?.current || !over?.data?.current || !over) return;
-                if (active?.id.toString() === over?.toString()) return;
-
-                const active_current = active.data.current;
-                const over_current = over.data.current;
-
-                if (active_current.type === 'STATUS' && over_current.type === 'STATUS') {
-                    const old_index = active_current.sortable.index;
-                    const new_index = over_current.sortable.index;
-                    setContent(arrayMove(content, old_index, new_index));
-                }
-
-                if (active_current.type === 'TASK' && over_current.type === 'TASK') {
-                    console.log(overlayActive);
-                }
-
-                setIsDisabledStatus(false);
-                setIsDisabledTask(false);
-                setOverlayActive(null);
-            }}
+            onDragStart={dragStartHandler}
+            onDragOver={dragOverHandler}
+            onDragEnd={dragEndHandler}
         >
             <div className="m-2"
                 style={{
@@ -170,16 +246,20 @@ function ViewContent() {
                     strategy={horizontalListSortingStrategy}
                 >
                     {isLoading
-                        ? Array.from({ length: 3 }).map((_, index) =>
+                        ? Array.from({ length: 4 }).map((_, index) =>
                             <Skeleton key={index} className="m-2" width={350} height={350} />)
                         : <>
                             {content.map((status) => <Status
                                 key={status.id}
+                                isDisabledTask={isDisabledTask}
+                                setIsDisabledTask={setIsDisabledTask}
                                 view={view}
                                 data={status}
                                 globalUID={uid}
                                 setGlobalUID={setUID}
-                                isDisabledTask={isDisabledTask}
+                                refresh={refresh}
+                                fetchContent={fetchContent}
+                                statusDeleteHandler={statusDeleteHandler}
                             />)}
                         </>}
                     <DragOverlay dropAnimation={{
@@ -202,17 +282,21 @@ function ViewContent() {
                 </SortableContext>
                 {!isLoading && view.leader?.id === user.id && !isCreating
                     ? <Button
-                        className="m-2 text-light bg-dark border-light"
+                        className="m-2 text-light bg-dark border-light d-flex justify-content-center"
                         style={{
                             width: 350,
                             height: 'fit-content'
                         }}
                         onClick={() => {
-                            setIsCreating(true);
-                            setUID(null);
+                            if(!isLoadingSpinner) {
+                                setIsCreating(true);
+                                setUID('create-status');
+                            }
                         }}
                     >
-                        <Plus size={34} />
+                        {!isLoadingSpinner
+                        ? <Plus size={34} />
+                        : <div className="spinner-border"></div>}
                     </Button> : <></>}
                 {isCreating
                     ? <div 
@@ -226,11 +310,14 @@ function ViewContent() {
                             className="d-flex justify-content-between align-items-center p-2"
                             onSubmit={(e) => {
                                 e.preventDefault();
-                                console.log('creating status');
+                                const name = (new FormData(e.target)).get('name');
+                                statusAddHandler(name);
                             }}
                         >
                             <input
+                                name="name"
                                 autoFocus
+                                required
                                 className="h5 m-0"
                                 data-bs-theme="dark"
                             />
