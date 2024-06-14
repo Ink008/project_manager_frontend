@@ -215,9 +215,9 @@ function ViewContent() {
     }
 
     useEffect(() => {
-        if (user.is_manager) {
-            navigate('/home');
-        }
+        // if (user.is_manager) {
+        //     navigate('/home');
+        // }
         refresh();
     }, [refresh, navigate, user.is_manager]);
 

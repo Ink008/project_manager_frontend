@@ -230,12 +230,10 @@ function ViewManager() {
                                     </ButtonGroup>
                                 </div>
                                 <div>
-                                    {user.is_manager
-                                        ? <></>
-                                        : <Button className="w-100"
-                                            onClick={() => navigate(`/view/${view.id}`)}>
-                                            Details
-                                        </Button>}
+                                    <Button className="w-100"
+                                        onClick={() => navigate(`/view/${view.id}`)}>
+                                        Details
+                                    </Button>
                                 </div>
                             </div>
                         </div>

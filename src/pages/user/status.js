@@ -231,6 +231,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisa
                 <input
                     name="name"
                     autoFocus
+                    required
                     className="m-0 flex-fill"
                     data-bs-theme="dark"
                 />
