@@ -4,7 +4,7 @@ import Jdenticon from 'react-jdenticon';
 import { format } from 'date-fns';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { FetchPostAPI } from "../../config/config";
@@ -12,6 +12,7 @@ import { DangerToast } from "../../component/toast";
 
 function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, taskDeleteHandler }) {
     const user = useOutletContext();
+    const navigate = useNavigate(); 
     const uid = `task-id-${data.id}`;
     const [name, setName] = useState('');
     const [isShowing, setIsShowing] = useState(false);
@@ -116,7 +117,8 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
         {/* Detect this is placeholder or not */}
         {fake_id != null && data.id === fake_id
             ? <></>
-            : <div className={`flex-grow-1 p-2 rounded bg-${color}`}>
+            : <div className={`flex-grow-1 p-2 rounded bg-${color}`}
+                onClick={() => navigate(`/task/${data.id}`, { state: { viewId: view.id, userId: user.id } })} >
                 <div className="m-0"
                     style={{
                         display: 'grid',

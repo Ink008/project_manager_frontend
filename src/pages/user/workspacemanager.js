@@ -1,4 +1,4 @@
-import { Plus, Pen, PeopleFill, Trash, X, Check } from "react-bootstrap-icons";
+import {PeopleFill, X, Check } from "react-bootstrap-icons";
 import { useEffect, useState } from "react";
 import { Button, ButtonGroup, Form, Modal } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ function WorkspaceManager() {
     const user_id = JSON.parse(sessionStorage.getItem("user_id"));
     const [isLoading, setIsLoading] = useState(true);
     const [workspaces, setWorkspaces] = useState([]);
-    const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+    const [selectedWorkspace] = useState(null);
     const [workspaceName, setWorkspaceName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [isShowingDialog, setIsShowingDialog] = useState(false);
@@ -109,8 +109,10 @@ function WorkspaceManager() {
                 ? <Skeleton width={55.45} height={43.46} />
                 : <ButtonGroup>
                     {!isCreating
-                        ? <Button variant="primary"
-                            onClick={() => setIsCreating(true)}><Plus size={30} /></Button>
+                        ? <>
+                        {/* <Button variant="primary"
+                            onClick={() => setIsCreating(true)}><Plus size={30} /></Button> */}
+                        </>
                         : <>
                             <Button form="create-form" type="submit" variant="primary">
                                 <Check size={30} />
@@ -156,7 +158,7 @@ function WorkspaceManager() {
                                         onClick={() => navigate(`/workspace/${workspace.id}/member`)}>
                                         <PeopleFill size={20}></PeopleFill>
                                     </Button>
-                                    <Button variant="primary"
+                                    {/* <Button variant="primary"
                                         onClick={() => {
                                             setWorkspaceName(workspace.name)
                                             setEditingIndex(workspace.id);
@@ -169,7 +171,7 @@ function WorkspaceManager() {
                                             setIsShowingDialog(true);
                                         }}>
                                         <Trash size={20}></Trash>
-                                    </Button>
+                                    </Button> */}
                                 </>
                                 : <>
                                     <Button form="edit-form" type="submit" variant="primary">

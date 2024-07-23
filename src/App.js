@@ -13,7 +13,7 @@ import ViewManager from './pages/user/viewmanager';
 import Member from './pages/user/member';
 import ViewContent from './pages/user/viewcontent';
 import Permission from './pages/user/permission';
-
+import TaskDetail from './pages/user/task_detail';
 function App() {
   return (
     <div style={{ 'height': '100vh' }} className="bg-dark text-light">
@@ -31,6 +31,9 @@ function App() {
               <Route path="view/:id" >
                 <Route index element={<ViewContent />}/>
                 <Route path='member' element={<Permission />}/>
+              </Route>
+              <Route path="task/:id">
+                <Route index element={<TaskDetail/>}/>
               </Route>
             </Route>
             <Route path='/admin'>
