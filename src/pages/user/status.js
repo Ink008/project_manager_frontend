@@ -70,7 +70,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisa
             var res = await FetchPostAPI(`/task/add`, {
                 status_id: data.id,
                 name: name,
-                position: data.tasks.length
+                position: tasks.length === 1 && tasks[0].id.toString().includes('fake') ? 0 : tasks.length
             });
             if (!res.success) throw Error(res.message);
         } catch (error) {
@@ -126,7 +126,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisa
     }, [uid, globalUID]);
 
     useEffect(() => {
-        setTasks(Array.from(data.tasks));
+        setTasks(data.tasks);
     }, [data]);
 
     return <div className="border rounded border-light bg-dark m-2 d-flex flex-column"
