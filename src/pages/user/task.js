@@ -117,8 +117,7 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
         {/* Detect this is placeholder or not */}
         {fake_id != null && data.id === fake_id
             ? <></>
-            : <div className={`flex-grow-1 p-2 rounded bg-${color}`}
-                onClick={() => navigate(`/task/${data.id}`, { state: { viewId: view.id, userId: user.id } })} >
+            : <div className={`flex-grow-1 p-2 rounded bg-${color}`}>
                 <div className="m-0"
                     style={{
                         display: 'grid',
@@ -128,7 +127,10 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
                 >
                     {!isEditing
                     ? <div className="d-flex justify-content-between align-items-center">
-                        <p className="m-0 flex-fill">{data.name}</p>
+                        <p className="m-0 flex-fill"
+                            onClick={() => navigate(`/task/${data.id}`, { state: { viewId: view.id, userId: user.id } })}>
+                            {data.name}
+                        </p>
                         {view.leader?.id === user.id
                             ? <ButtonGroup size="sm">
                                 <Button 

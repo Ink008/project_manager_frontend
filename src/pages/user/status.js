@@ -70,7 +70,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisa
             var res = await FetchPostAPI(`/task/add`, {
                 status_id: data.id,
                 name: name,
-                position: tasks.length
+                position: data.tasks.length
             });
             if (!res.success) throw Error(res.message);
         } catch (error) {
@@ -126,7 +126,7 @@ function Status({ view, data, globalUID, setGlobalUID, isDisabledTask, setIsDisa
     }, [uid, globalUID]);
 
     useEffect(() => {
-        setTasks(data.tasks);
+        setTasks(Array.from(data.tasks));
     }, [data]);
 
     return <div className="border rounded border-light bg-dark m-2 d-flex flex-column"
