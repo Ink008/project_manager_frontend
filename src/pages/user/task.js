@@ -69,15 +69,16 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
         }
     }
 
-    const colorHandler = (reminder_date, due_date, is_complete = false) => {
-        if(!reminder_date && !due_date) return 'secondary';
-        if(is_complete) return 'success';
-
+    const colorHandler = (reminder_date, due_date, completed_date = null) => {
         let currentDate = new Date();
         let minDate = new Date(-8640000000000000);
         let maxDate = new Date(8640000000000000);
         let startDate = reminder_date != null ? new Date(reminder_date) : minDate;
         let endDate = due_date != null ? new Date(due_date) : maxDate;
+        let completedDate = completed_date != null ? new Date(completed_date) : null;
+        
+        if(completed_date) return completedDate < endDate ? 'success' : 'danger';
+        if(!reminder_date && !due_date) return 'secondary';
 
         if (currentDate < startDate) return 'secondary';
         else if (currentDate < endDate) {
@@ -110,7 +111,7 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
         }
     }, [uid, globalUID]);
 
-    const color = colorHandler(data.reminder_date, data.due_date, data.is_complete);
+    const color = colorHandler(data.reminder_date, data.due_date, data.completed_date);
 
     return <li className="d-flex shadow-lg"
         ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -194,7 +195,7 @@ function Task({ view, data, fake_id, globalUID, setGlobalUID, fetchContent, task
                                 {data.due_date != null ? getDateString(data.due_date) : '-'}
                             </div>
                             <div>
-                                {data.is_complete ? 'COMPLETE' : date_diff(data.reminder_date, data.due_date)}
+                                {data.completed_date ? 'COMPLETE' : date_diff(data.reminder_date, data.due_date)}
                             </div>
                         </div>
                     </div>
