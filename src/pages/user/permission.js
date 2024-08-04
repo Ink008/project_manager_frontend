@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import Jdenticon from 'react-jdenticon';
 import { components } from 'react-select';
@@ -139,13 +139,22 @@ function Permission() {
 
 function MemberDialog({ view, show, onHide, onSubmit }) {
     const [user, setUser] = useState(null);
+    const [isAllowInviteUserFromAnotherWorkspace, setIsAllowInviteUserFromAnotherWorkspace] = useState(false);
     const [workspaceID, setWorkspaceID] = useState(null);
+    var endpoint = useRef(`/workspace/${workspaceID}/member`);
 
     useEffect(() => {
         if(show) {
             setWorkspaceID(view.workspace_id);
         }
     }, [show, view])
+
+    useEffect(() => {
+        endpoint.current = isAllowInviteUserFromAnotherWorkspace 
+        ? `/user/member`
+        : `/workspace/${workspaceID}/member`;
+    }, [isAllowInviteUserFromAnotherWorkspace, workspaceID])
+
     return <Modal data-bs-theme="dark" className="text-light"
         show={show} onHide={onHide}>
         <Modal.Header>
@@ -165,8 +174,8 @@ function MemberDialog({ view, show, onHide, onSubmit }) {
                         neutral0: '#333',
                         neutral80: '#fff',
                     },
-                })} loadOptions={ async (value, callback) => {
-                    var data = await FetchGetAPI(`/workspace/${workspaceID}/member?search=${encodeURIComponent(value)}`);
+                })} loadOptions={async (value, callback) => {
+                    var data = await FetchGetAPI(`${endpoint.current}?search=${encodeURIComponent(value)}`);
                     callback(data.map((user) => ({ 
                         value: user.id, 
                         label: user.username, 
@@ -180,6 +189,14 @@ function MemberDialog({ view, show, onHide, onSubmit }) {
                       </components.Option>
                     );
                 }}}/>
+                <div className="form-check">
+                <input type="checkbox" id="other-workspace-checkbox" className="form-check-input"
+                    checked={isAllowInviteUserFromAnotherWorkspace}
+                    onChange={() => setIsAllowInviteUserFromAnotherWorkspace(!isAllowInviteUserFromAnotherWorkspace)}/>
+                <label className="form-check-label" htmlFor="other-workspace-checkbox">
+                    Allowed invite user from other workspace
+                </label>
+                </div>
         </Modal.Body>
         <Modal.Footer>
             <Button variant="secondary" onClick={onHide}>
