@@ -8,6 +8,7 @@ import Login from './pages/login';
 import AdminLogin from './pages/admin/login';
 import AdminDashboard from './pages/admin/dashboard'
 import Home from './pages/user/home';
+import Profile from './pages/user/profile';
 import Layout from './pages/user/layout';
 import ViewManager from './pages/user/viewmanager';
 import Member from './pages/user/member';
@@ -24,6 +25,7 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Login />} />
               <Route path="home" element={<Home />} />
+              <Route path="profile/:id" element={<Profile />} />
               <Route path="workspace/:id" >
                 <Route index element={<ViewManager />}/>
                 <Route path='member' element={<Member />}/>

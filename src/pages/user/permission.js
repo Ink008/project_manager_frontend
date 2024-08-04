@@ -98,9 +98,10 @@ function Permission() {
                     <div className="card-body d-flex justify-content-between align-items-center">
                         <div className="card-text d-flex align-item-center">
                             <Jdenticon size={'48'} value={member.id.toString()} />
-                            <div className="my-0 ms-2 h5 align-self-center">
+                            <a className="my-0 ms-2 h5 align-self-center text-decoration-none"
+                                href={`/profile/${member.id}`}>
                                 {member.username}
-                            </div>
+                            </a>
                         </div>
                         {view.leader?.id !== user.id
                             ? <></>

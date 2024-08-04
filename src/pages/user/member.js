@@ -119,9 +119,10 @@ function Member() {
                     <div className="card-body d-flex justify-content-between align-items-center">
                         <div className="card-text d-flex align-item-center">
                             <Jdenticon size={'48'} value={member.id.toString()} />
-                            <div className={`my-0 ms-2 h5 align-self-center ${member.leader ? 'App-link' : ''}`}>
+                            <a className={`my-0 ms-2 text-decoration-none h5 align-self-center ${member.leader ? 'App-link' : ''}`}
+                                href={`/profile/${member.id}`}>
                                 {member.username}
-                            </div>
+                            </a>
                         </div>
                         <ButtonGroup size="sm">
                             <Button variant="primary"

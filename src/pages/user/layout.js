@@ -59,7 +59,8 @@ function Layout() {
                                     title={
                                         <Jdenticon size={icon_size.toString()} value={user.id.toString()} />
                                     }>
-                                    <NavDropdown.Item className='h5 m-0'>Profile</NavDropdown.Item>
+                                    <NavDropdown.Item className='h5 m-0'
+                                        href={`/profile/${user_id}`}>Profile</NavDropdown.Item>
                                     <NavDropdown.Divider />
                                     <NavDropdown.Item className='text-danger h5 m-0'
                                         href='/' onClick={() => sessionStorage.removeItem('user_id')}>Log Out</NavDropdown.Item>
