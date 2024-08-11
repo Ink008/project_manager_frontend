@@ -18,7 +18,7 @@ function Profile() {
             setIsLoading(true);
             var data = await FetchGetAPI(`/user/id=${id}`);
             if (!data) throw new Error('There is something wrong with backend!');
-            console.log(data);
+            
             setProfileUser(data);
         } catch (error) {
             DangerToast("Get User Profile Failed!", error.message);

@@ -1,5 +1,10 @@
+import { Nav, Navbar, NavDropdown, OverlayTrigger } from "react-bootstrap";
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
+import Button from 'react-bootstrap/Button';
+import Popover from 'react-bootstrap/Popover';
 import Container from 'react-bootstrap/Container';
-import { Nav, Navbar, NavDropdown } from "react-bootstrap";
+import { Bell, BellFill } from "react-bootstrap-icons";
 import { useNavigate, Outlet } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import Skeleton from 'react-loading-skeleton';
@@ -8,6 +13,7 @@ import { Scrollbar } from 'react-scrollbars-custom';
 
 import { FetchGetAPI } from '../../config/config';
 import { DangerToast } from '../../component/toast';
+import TaskNotifications from './task_notifications';
 
 function Layout() {
     const user_id = JSON.parse(sessionStorage.getItem("user_id"));
@@ -51,7 +57,10 @@ function Layout() {
                             <b className='h5 App-link'>Home</b>
                         </Nav.Link>
                     </Nav>
-                    <div className="justify-content-end">
+                    {isLoading
+                        ? <></>
+                        : <NotificationsButton />}
+                    <div className="justify-content-end ms-4">
                         {isLoading
                             ? <Skeleton containerClassName='d-flex align-item-center' height={icon_size} width={icon_size} />
                             : <Nav>
@@ -80,6 +89,62 @@ function Layout() {
                 </div> : <Outlet context={user} />}
         </div>
     </Scrollbar>
+}
+
+function NotificationsButton() {
+    const [show, setShow] = useState(false);
+    const [target, setTarget] = useState(null);
+
+    const handleClick = (event) => {
+        setShow(!show);
+        setTarget(event.target);
+    };
+
+    const handleClose = () => {
+        setShow(false);
+    };
+
+    const popover = (
+        <Popover data-bs-theme="dark" 
+            style={{'--bs-popover-max-width': '480px'}}
+            className='w-100'
+        >
+            <Popover.Header className='text-light'>
+                <div className='text-center h5 mb-0'>
+                    Notifications
+                </div>
+            </Popover.Header>
+            <Popover.Body>
+                <Tabs defaultActiveKey={'Tasks'} fill className='d-flex flex-row'>
+                    <Tab eventKey={'Tasks'} title={<div className='h5 mb-0'>Tasks</div>}>
+                        <div className="border rounded-bottom">
+                            <TaskNotifications />
+                        </div>
+                    </Tab>
+                </Tabs>
+            </Popover.Body>
+        </Popover>
+    );
+
+    return (
+        <OverlayTrigger
+            trigger="click"
+            placement="bottom-end"
+            overlay={popover}
+            show={show}
+            target={target}
+            onToggle={handleClose}
+            rootClose
+        >
+            <Button
+                variant='dark'
+                className='rounded-circle'
+                onClick={handleClick}
+            >
+                {show? <BellFill size={25} /> : <Bell size={25} />}
+            </Button>
+        </OverlayTrigger>
+    );
 }
 
 export default Layout;
