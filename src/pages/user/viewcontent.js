@@ -3,6 +3,7 @@ import { Check, Plus, X } from "react-bootstrap-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Scrollbar } from "react-scrollbars-custom";
+import useWebSocket from 'react-use-websocket';
 import { 
     DndContext, 
     closestCorners, 
@@ -18,7 +19,7 @@ import Status from "./status";
 import Task from "./task";
 import Skeleton from "react-loading-skeleton";
 import { DangerToast } from "../../component/toast";
-import { FetchGetAPI, FetchPostAPI } from "../../config/config";
+import { FetchGetAPI, FetchPostAPI, WebSocket_URL } from "../../config/config";
 
 function ViewContent() {
     const user = useOutletContext();
@@ -30,6 +31,18 @@ function ViewContent() {
     const [isCreating, setIsCreating] = useState(false);
     const [uid, setUID] = useState(null);
     const navigate = useNavigate();
+    // Variable for Websocket
+    const { sendJsonMessage, lastJsonMessage } = useWebSocket(WebSocket_URL + `/view/${id}`, {
+        share: true
+    });
+
+    useEffect(() => {
+        //Check lastJsonMessage is not null and not empty object
+        if(lastJsonMessage !== null && Object.keys(lastJsonMessage).length !== 0) {
+            if(lastJsonMessage.message === 'Content Change')
+                setContent(lastJsonMessage.content);
+        }
+    }, [lastJsonMessage]);
     // Variable state for dnd kit
     const [isDisabledStatus, setIsDisabledStatus] = useState(false);
     const [isDisabledTask, setIsDisabledTask] = useState(false);
@@ -49,8 +62,15 @@ function ViewContent() {
     const findTaskIndexByID = (taskArr, id) =>
         taskArr.findIndex((task) => task.id.toString() === id.toString());
 
-    const fetchContent = useCallback(async () => {
+    const fetchContent = useCallback(async (sendWebSocket = true) => {
         try {
+            //Send WebSocket Message
+            if(sendWebSocket) {
+                sendJsonMessage({
+                    "message": "Content Change"
+                });
+            }
+
             var data = await FetchGetAPI(`/view/${id}/content`);
             setContent(data);
             data = await FetchGetAPI(`/view/id=${encodeURIComponent(id)}`);
@@ -59,12 +79,12 @@ function ViewContent() {
             DangerToast("Get Data Failed!", error.message);
             setContent([]);
         }
-    }, [id]);
+    }, [id, sendJsonMessage]);
 
     const refresh = useCallback(async () => {
         try {
             setIsLoading(true);
-            await fetchContent();
+            await fetchContent(false);
         } catch (error) {
             DangerToast("Get Data Failed!", error.message);
         } finally {

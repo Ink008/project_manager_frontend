@@ -1,4 +1,5 @@
 const Server_URL = "http://localhost:8080";
+const WebSocket_URL = "ws://localhost:8080";
 
 // eslint-disable-next-line
 function FetchPostAPI(endpoint, body) {
@@ -26,5 +27,5 @@ function FetchGetAPI(endpoint) {
     });
 }
 
-export { FetchPostAPI, FetchGetAPI };
+export { FetchPostAPI, FetchGetAPI, WebSocket_URL };
 export default Server_URL;
