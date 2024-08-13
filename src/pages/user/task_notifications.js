@@ -12,6 +12,16 @@ function TaskNotifications() {
     const [isLoading, setIsLoading] = useState(true);
     const [tasks, setTasks] = useState([]);
 
+    const getViewId = async (taskId) => {
+        try {
+            const data = await FetchGetAPI(`/task/${taskId}/view`);
+            return data.id;
+        } catch (error) {
+            DangerToast("Fetch viewId failed!");
+            return null;
+        }
+    }
+
     const getNotifications = useCallback(async () => {
         try {
             setIsLoading(true);
@@ -109,7 +119,12 @@ function TaskNotifications() {
                         <Button 
                             variant="dark" 
                             className={`w-100 text-start text-${task_color}`}
-                            onClick={() => navigate(`/task/${task.id}`)}
+                            onClick={async () => {
+                                const viewId = await getViewId(task.id);
+                                if (viewId) {
+                                    navigate(`/task/${task.id}`,  { state: { viewId: viewId, userId: user_id } });
+                                }
+                            }}
                         >
                             <b>{`${task_date_diff}: "${task.name}"`}</b>
                         </Button>

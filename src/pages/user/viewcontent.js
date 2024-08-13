@@ -1,9 +1,8 @@
-import { Button, ButtonGroup } from "react-bootstrap";
-import { Check, Plus, X } from "react-bootstrap-icons";
+import { Button, ButtonGroup, OverlayTrigger, Popover } from "react-bootstrap";
+import { Check, Plus, X, Chat } from "react-bootstrap-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Scrollbar } from "react-scrollbars-custom";
-import useWebSocket from 'react-use-websocket';
 import { 
     DndContext, 
     closestCorners, 
@@ -14,12 +13,13 @@ import {
     useSensors
 } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import ChatMess from "./chat";
 
 import Status from "./status";
 import Task from "./task";
 import Skeleton from "react-loading-skeleton";
 import { DangerToast } from "../../component/toast";
-import { FetchGetAPI, FetchPostAPI, WebSocket_URL } from "../../config/config";
+import { FetchGetAPI, FetchPostAPI } from "../../config/config";
 
 function ViewContent() {
     const user = useOutletContext();
@@ -31,18 +31,6 @@ function ViewContent() {
     const [isCreating, setIsCreating] = useState(false);
     const [uid, setUID] = useState(null);
     const navigate = useNavigate();
-    // Variable for Websocket
-    const { sendJsonMessage, lastJsonMessage } = useWebSocket(WebSocket_URL + `/view/${id}`, {
-        share: true
-    });
-
-    useEffect(() => {
-        //Check lastJsonMessage is not null and not empty object
-        if(lastJsonMessage !== null && Object.keys(lastJsonMessage).length !== 0) {
-            if(lastJsonMessage.message === 'Content Change')
-                setContent(lastJsonMessage.content);
-        }
-    }, [lastJsonMessage]);
     // Variable state for dnd kit
     const [isDisabledStatus, setIsDisabledStatus] = useState(false);
     const [isDisabledTask, setIsDisabledTask] = useState(false);
@@ -56,21 +44,33 @@ function ViewContent() {
     // Variable state for overlay
     const [overlayActive, setOverlayActive] = useState(null);
 
+    const [isChatOpen, setIsChatOpen] = useState(false);
+
+    const toggleChatPopup = () => {
+        setIsChatOpen(!isChatOpen);
+    };
+
+    const chatPopover = (
+        <Popover data-bs-theme="dark" style={{'--bs-popover-max-width': '480px'}} className='w-100'>
+            <Popover.Header className='text-light'>
+                <div className='text-center h5 mb-0'>Chat</div>
+            </Popover.Header>
+            <Popover.Body>
+                <ChatMess 
+                    viewId={id} 
+                    userId={user.id} />
+            </Popover.Body>
+        </Popover>
+    );
+
     const findStatusByTaskID = (id) => content.find((status) =>
         status.tasks.map((task) => task.id.toString()).includes(id.toString()));
 
     const findTaskIndexByID = (taskArr, id) =>
         taskArr.findIndex((task) => task.id.toString() === id.toString());
 
-    const fetchContent = useCallback(async (sendWebSocket = true) => {
+    const fetchContent = useCallback(async () => {
         try {
-            //Send WebSocket Message
-            if(sendWebSocket) {
-                sendJsonMessage({
-                    "message": "Content Change"
-                });
-            }
-
             var data = await FetchGetAPI(`/view/${id}/content`);
             setContent(data);
             data = await FetchGetAPI(`/view/id=${encodeURIComponent(id)}`);
@@ -79,12 +79,12 @@ function ViewContent() {
             DangerToast("Get Data Failed!", error.message);
             setContent([]);
         }
-    }, [id, sendJsonMessage]);
+    }, [id]);
 
     const refresh = useCallback(async () => {
         try {
             setIsLoading(true);
-            await fetchContent(false);
+            await fetchContent();
         } catch (error) {
             DangerToast("Get Data Failed!", error.message);
         } finally {
@@ -356,6 +356,15 @@ function ViewContent() {
                     : <></>}
             </div>
         </DndContext>
+        {!user.is_manager && (
+            <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
+                <OverlayTrigger trigger="click" placement="top" overlay={chatPopover}>
+                    <Button variant="primary" onClick={toggleChatPopup}>
+                        <Chat size={30} />
+                    </Button>
+                </OverlayTrigger>
+            </div>
+        )}
     </Scrollbar>;
 }
 
